@@ -95,4 +95,4 @@ User preferences (such as selected language and UI theme) are safely stored in:
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.![Uploading Nimbus .png…]()
+This project is licensed under the **MIT License** - see the [LICENSE](https://www.google.com/search?q=LICENSE) file for details.
