@@ -12,11 +12,11 @@ using System.Text;
 
 namespace WinCleaner
 {
-    internal sealed class CleanResult
+    public sealed class CleanResult
     {
-        public long Freed;
-        public int Removed;
-        public int Skipped;
+        public long Freed { get; set; }
+        public int Removed { get; set; }
+        public int Skipped { get; set; }
     }
 
     internal static class Paths
@@ -69,7 +69,10 @@ namespace WinCleaner
             {
                 var dir = Path.GetDirectoryName(pattern);
                 var mask = Path.GetFileName(pattern);
-                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir)) return list;
+
+                if (string.IsNullOrEmpty(dir) || !Directory.Exists(dir))
+                    return list;
+
                 list.AddRange(Directory.EnumerateDirectories(dir, mask));
             }
             catch { }
@@ -77,25 +80,29 @@ namespace WinCleaner
         }
     }
 
-    internal static class CleanEngine
+    public static class CleanEngine
     {
+        public const string AppVersion = "v1.1.0";
+
         public static bool IsAdmin => WinApi.IsUserAnAdmin();
 
         public static string FormatSize(long n)
         {
-            if (n < 1024) return n + " B";
-            if (n < 1024 * 1024) return (n / 1024.0).ToString("0.0") + " KB";
-            if (n < 1024L * 1024 * 1024) return (n / (1024.0 * 1024)).ToString("0.0") + " MB";
-            return (n / (1024.0 * 1024 * 1024)).ToString("0.00") + " GB";
+            if (n < 1024) return $"{n} B";
+            if (n < 1024 * 1024) return $"{(n / 1024.0):0.0} KB";
+            if (n < 1024L * 1024 * 1024) return $"{(n / (1024.0 * 1024)):0.0} MB";
+            return $"{(n / (1024.0 * 1024 * 1024)):0.00} GB";
         }
 
         public static long QuickSize(string path, int cap = 8000)
         {
             if (string.IsNullOrEmpty(path) || !Directory.Exists(path)) return 0;
+
             long total = 0;
             int n = 0;
             var stack = new Stack<string>();
             stack.Push(path);
+
             while (stack.Count > 0 && n < cap)
             {
                 var dir = stack.Pop();
@@ -107,34 +114,38 @@ namespace WinCleaner
                         if (++n >= cap) return total;
                     }
                     foreach (var d in Directory.EnumerateDirectories(dir))
+                    {
                         stack.Push(d);
+                    }
                 }
                 catch { }
             }
             return total;
         }
 
-        public static long QuickSizeMany(IEnumerable<string> paths)
-        {
-            long t = 0;
-            foreach (var p in paths) t += QuickSize(p);
-            return t;
-        }
+        public static long QuickSizeMany(IEnumerable<string> paths) => paths.Sum(p => QuickSize(p));
 
         public static CleanResult CleanTree(string root, CancellationToken ct)
         {
-            var r = new CleanResult();
-            if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return r;
+            var result = new CleanResult();
+            if (string.IsNullOrEmpty(root) || !Directory.Exists(root)) return result;
+
             IEnumerable<string> entries;
-            try { entries = Directory.EnumerateFileSystemEntries(root).ToList(); }
-            catch { return r; }
+            try
+            {
+                entries = Directory.EnumerateFileSystemEntries(root).ToList();
+            }
+            catch
+            {
+                return result;
+            }
 
             foreach (var entry in entries)
             {
                 if (ct.IsCancellationRequested) break;
-                TryDelete(entry, r);
+                TryDelete(entry, result);
             }
-            return r;
+            return result;
         }
 
         public static CleanResult CleanMany(IEnumerable<string> roots, CancellationToken ct)
@@ -151,7 +162,7 @@ namespace WinCleaner
             return all;
         }
 
-        static void TryDelete(string path, CleanResult r)
+        private static void TryDelete(string path, CleanResult r)
         {
             try
             {
@@ -159,30 +170,41 @@ namespace WinCleaner
                 {
                     long sz = 0;
                     try { sz = new FileInfo(path).Length; } catch { }
+
                     TryClearAttr(path);
                     File.Delete(path);
                     r.Freed += sz;
                     r.Removed++;
                     return;
                 }
+
                 if (Directory.Exists(path))
                 {
                     long sz = QuickSize(path, 4000);
                     DeleteDirBestEffort(path);
+
                     if (!Directory.Exists(path))
                     {
                         r.Freed += sz;
                         r.Removed++;
                     }
-                    else r.Skipped++;
+                    else
+                    {
+                        r.Skipped++;
+                    }
                 }
             }
-            catch (IOException) { r.Skipped++; }
-            catch (UnauthorizedAccessException) { r.Skipped++; }
-            catch { r.Skipped++; }
+            catch (Exception ex) when (ex is IOException || ex is UnauthorizedAccessException)
+            {
+                r.Skipped++;
+            }
+            catch
+            {
+                r.Skipped++;
+            }
         }
 
-        static void DeleteDirBestEffort(string dir)
+        private static void DeleteDirBestEffort(string dir)
         {
             try
             {
@@ -191,14 +213,16 @@ namespace WinCleaner
                     try { TryClearAttr(f); File.Delete(f); } catch { }
                 }
                 foreach (var d in Directory.EnumerateDirectories(dir))
+                {
                     DeleteDirBestEffort(d);
+                }
                 TryClearAttr(dir);
                 Directory.Delete(dir, false);
             }
             catch { }
         }
 
-        static void TryClearAttr(string path)
+        private static void TryClearAttr(string path)
         {
             try { File.SetAttributes(path, FileAttributes.Normal); } catch { }
         }
@@ -206,9 +230,10 @@ namespace WinCleaner
         public static IEnumerable<string> UserTemps()
         {
             var list = new List<string> { Paths.TempUser };
-            if (!Paths.TempLocal.Equals(Paths.TempUser.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase)
-                && Directory.Exists(Paths.TempLocal))
+            if (!Paths.TempLocal.Equals(Paths.TempUser.TrimEnd('\\'), StringComparison.OrdinalIgnoreCase) && Directory.Exists(Paths.TempLocal))
+            {
                 list.Add(Paths.TempLocal);
+            }
             return list;
         }
 
@@ -216,6 +241,7 @@ namespace WinCleaner
         {
             var la = Paths.Local;
             var found = new List<string>();
+
             found.AddRange(Paths.Existing(
                 Path.Combine(la, "Google", "Chrome", "User Data", "Default", "Cache"),
                 Path.Combine(la, "Google", "Chrome", "User Data", "Default", "Code Cache"),
@@ -224,7 +250,9 @@ namespace WinCleaner
                 Path.Combine(la, "Microsoft", "Edge", "User Data", "Default", "Code Cache"),
                 Path.Combine(la, "Microsoft", "Edge", "User Data", "Default", "GPUCache"),
                 Path.Combine(la, "BraveSoftware", "Brave-Browser", "User Data", "Default", "Cache"),
-                Path.Combine(la, "Opera Software", "Opera Stable", "Cache")));
+                Path.Combine(la, "Opera Software", "Opera Stable", "Cache")
+            ));
+
             foreach (var prof in Paths.Globs(Path.Combine(la, "Mozilla", "Firefox", "Profiles", "*")))
             {
                 var c = Path.Combine(prof, "cache2");
@@ -244,28 +272,23 @@ namespace WinCleaner
             Path.Combine(Paths.Local, "NVIDIA", "GLCache"),
             Path.Combine(Paths.Local, "AMD", "DxCache"),
             Path.Combine(Paths.Local, "AMD", "GLCache"),
-            Path.Combine(Paths.Local, "Intel", "ShaderCache"));
+            Path.Combine(Paths.Local, "Intel", "ShaderCache")
+        );
 
         public static IEnumerable<string> DiscordCaches()
         {
             var b = Path.Combine(Paths.Roam, "discord");
-            return Paths.Existing(Path.Combine(b, "Cache"), Path.Combine(b, "Code Cache"),
-                Path.Combine(b, "GPUCache"), Path.Combine(b, "CachedData"));
+            return Paths.Existing(Path.Combine(b, "Cache"), Path.Combine(b, "Code Cache"), Path.Combine(b, "GPUCache"), Path.Combine(b, "CachedData"));
         }
 
-        public static IEnumerable<string> TeamsCaches() => Paths.Existing(
-            Path.Combine(Paths.Roam, "Microsoft", "Teams", "Cache"),
-            Path.Combine(Paths.Roam, "Microsoft", "Teams", "GPUCache"),
-            Path.Combine(Paths.Roam, "Microsoft", "Teams", "blob_storage"));
-
-        public static IEnumerable<string> SteamCaches() =>
-            Paths.Existing(Path.Combine(Paths.Local, "Steam", "htmlcache"));
-
+        public static IEnumerable<string> TeamsCaches() => Paths.Existing(Path.Combine(Paths.Roam, "Microsoft", "Teams", "Cache"), Path.Combine(Paths.Roam, "Microsoft", "Teams", "GPUCache"), Path.Combine(Paths.Roam, "Microsoft", "Teams", "blob_storage"));
+        public static IEnumerable<string> SteamCaches() => Paths.Existing(Path.Combine(Paths.Local, "Steam", "htmlcache"));
         public static IEnumerable<string> WerPaths() => Paths.Existing(Paths.WERUser, Paths.WERAll);
         public static IEnumerable<string> OfficeCaches() => Paths.Existing(Paths.Office);
         public static IEnumerable<string> SpotifyCaches() => Paths.Existing(Paths.Spotify, Paths.SpotifyData);
         public static IEnumerable<string> RobloxCaches() => Paths.Existing(Paths.Roblox, Paths.RobloxCache);
         public static IEnumerable<string> VsCodeCaches() => Paths.Existing(Paths.VsCode, Paths.VsCodeCache2);
+
         public static IEnumerable<string> WebViewCaches()
         {
             var list = new List<string>();
@@ -273,20 +296,17 @@ namespace WinCleaner
             list.AddRange(Paths.Globs(Path.Combine(Paths.Local, "Microsoft", "Edge", "User Data", "*", "Service Worker")));
             return list;
         }
+
         public static IEnumerable<string> JavaCaches() => Paths.Existing(Paths.Java);
         public static IEnumerable<string> AdobeCaches() => Paths.Existing(Paths.Adobe);
         public static IEnumerable<string> EpicCaches() => Paths.Existing(Paths.Epic);
         public static IEnumerable<string> WinLogs() => Paths.Existing(Paths.Cbs, Path.Combine(Paths.Win, "Logs", "DISM"), Path.Combine(Paths.Win, "Logs", "MoSetup"));
         public static IEnumerable<string> NotifyPaths() => Paths.Existing(Paths.Notify);
-        public static IEnumerable<string> ZoomCaches() => Paths.Existing(
-            Path.Combine(Paths.Roam, "Zoom", "logs"),
-            Path.Combine(Paths.Roam, "Zoom", "data", "WebviewCacheEChromium"));
-        public static IEnumerable<string> TelegramCaches() => Paths.Existing(
-            Path.Combine(Paths.Roam, "Telegram Desktop", "tdata", "temp_data"));
-        public static IEnumerable<string> XboxCaches() => Paths.Existing(
-            Path.Combine(Paths.Local, "Microsoft", "Windows", "GameBar"));
-        public static IEnumerable<string> PhotosCaches() => Paths.Existing(
-            Path.Combine(Paths.Local, "Microsoft", "Windows", "Explorer", "ThumbCacheToDelete"));
+        public static IEnumerable<string> ZoomCaches() => Paths.Existing(Path.Combine(Paths.Roam, "Zoom", "logs"), Path.Combine(Paths.Roam, "Zoom", "data", "WebviewCacheEChromium"));
+        public static IEnumerable<string> TelegramCaches() => Paths.Existing(Path.Combine(Paths.Roam, "Telegram Desktop", "tdata", "temp_data"));
+        public static IEnumerable<string> XboxCaches() => Paths.Existing(Path.Combine(Paths.Local, "Microsoft", "Windows", "GameBar"));
+        public static IEnumerable<string> PhotosCaches() => Paths.Existing(Path.Combine(Paths.Local, "Microsoft", "Windows", "Explorer", "ThumbCacheToDelete"));
+
         public static IEnumerable<string> DevCaches()
         {
             var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
@@ -294,24 +314,27 @@ namespace WinCleaner
                 Path.Combine(home, ".npm", "_cacache"),
                 Path.Combine(Paths.Local, "npm-cache"),
                 Path.Combine(Paths.Local, "pip", "Cache"),
-                Path.Combine(home, ".nuget", "packages"));
+                Path.Combine(home, ".nuget", "packages")
+            );
         }
-        public static IEnumerable<string> OneDriveLogs() => Paths.Existing(
-            Path.Combine(Paths.Local, "Microsoft", "OneDrive", "logs"));
+
+        public static IEnumerable<string> OneDriveLogs() => Paths.Existing(Path.Combine(Paths.Local, "Microsoft", "OneDrive", "logs"));
 
         public static bool ToggleStartWithWindows()
         {
             const string key = @"Software\Microsoft\Windows\CurrentVersion\Run";
             const string name = "WindowsTemizlemeAraci";
+
             using (var k = Registry.CurrentUser.CreateSubKey(key))
             {
                 if (k == null) return false;
+
                 if (k.GetValue(name) != null)
                 {
                     k.DeleteValue(name, false);
                     return false;
                 }
-                k.SetValue(name, "\"" + Application.ExecutablePath + "\"");
+                k.SetValue(name, $"\"{Application.ExecutablePath}\"");
                 return true;
             }
         }
@@ -326,7 +349,14 @@ namespace WinCleaner
                 {
                     var name = Path.GetFileName(f).ToLowerInvariant();
                     if (!name.StartsWith("thumbcache_") && !name.StartsWith("iconcache_")) continue;
-                    try { TryClearAttr(f); File.Delete(f); n++; } catch { }
+
+                    try
+                    {
+                        TryClearAttr(f);
+                        File.Delete(f);
+                        n++;
+                    }
+                    catch { }
                 }
             }
             catch { }
@@ -335,14 +365,15 @@ namespace WinCleaner
 
         public static void EmptyRecycle()
         {
-            WinApi.SHEmptyRecycleBin(IntPtr.Zero, null,
-                WinApi.SHERB_NOCONFIRMATION | WinApi.SHERB_NOPROGRESSUI | WinApi.SHERB_NOSOUND);
+            WinApi.SHEmptyRecycleBin(IntPtr.Zero, null, WinApi.SHERB_NOCONFIRMATION | WinApi.SHERB_NOPROGRESSUI | WinApi.SHERB_NOSOUND);
         }
 
         public static void FlushDns()
         {
             if (WinApi.DnsFlushResolverCache() == 0)
+            {
                 RunHidden("ipconfig.exe", "/flushdns");
+            }
         }
 
         public static void RunHidden(string file, string args)
@@ -355,7 +386,9 @@ namespace WinCleaner
                     UseShellExecute = false,
                     WindowStyle = ProcessWindowStyle.Hidden
                 }))
+                {
                     p?.WaitForExit(120000);
+                }
             }
             catch { }
         }
@@ -378,6 +411,7 @@ namespace WinCleaner
                     try { p.Kill(); } catch { }
                 }
             }).ConfigureAwait(false);
+
             await Task.Delay(500).ConfigureAwait(false);
             StartHidden("explorer.exe");
         }
@@ -386,8 +420,15 @@ namespace WinCleaner
         {
             for (int i = 0; i < 6; i++)
             {
-                try { Clipboard.Clear(); return; }
-                catch { Thread.Sleep(40); }
+                try
+                {
+                    Clipboard.Clear();
+                    return;
+                }
+                catch
+                {
+                    Thread.Sleep(40);
+                }
             }
         }
 
@@ -410,11 +451,10 @@ namespace WinCleaner
         {
             try
             {
-                var used = 0L;
-                foreach (var p in Process.GetProcesses())
+                var used = Process.GetProcesses().Sum(p =>
                 {
-                    try { used += p.WorkingSet64; } catch { }
-                }
+                    try { return p.WorkingSet64; } catch { return 0L; }
+                });
                 return string.Format(S.G("ram.line"), FormatSize(used));
             }
             catch { return S.G("ram.none"); }
@@ -435,7 +475,7 @@ namespace WinCleaner
                     .Where(x => !string.IsNullOrEmpty(x.n))
                     .OrderByDescending(x => x.ws)
                     .Take(take)
-                    .Select(x => x.n + "   " + FormatSize(x.ws))
+                    .Select(x => $"{x.n}   {FormatSize(x.ws)}")
                     .ToList();
             }
             catch
@@ -453,15 +493,17 @@ namespace WinCleaner
                 {
                     if (nic.OperationalStatus != OperationalStatus.Up) continue;
                     if (nic.NetworkInterfaceType == NetworkInterfaceType.Loopback) continue;
+
                     var ip = nic.GetIPProperties();
                     foreach (var a in ip.UnicastAddresses)
                     {
                         if (a.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
-                            lines.Add(nic.Name + "  " + a.Address);
+                            lines.Add($"{nic.Name}  {a.Address}");
                     }
                 }
             }
             catch { lines.Add(S.G("net.none")); }
+
             if (lines.Count == 0) lines.Add(S.G("net.noip"));
             return lines;
         }
@@ -478,21 +520,24 @@ namespace WinCleaner
                     RedirectStandardError = true,
                     StandardOutputEncoding = Encoding.Default
                 };
+
                 using (var p = Process.Start(psi))
                 {
-                    if (p == null) return "";
+                    if (p == null) return string.Empty;
                     var o = p.StandardOutput.ReadToEnd();
                     p.WaitForExit(timeoutMs);
                     return o;
                 }
             }
-            catch { return ""; }
+            catch { return string.Empty; }
         }
 
         public static void SetExplorerAdvanced(string name, int value)
         {
             using (var k = Registry.CurrentUser.CreateSubKey(@"Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"))
+            {
                 k?.SetValue(name, value, RegistryValueKind.DWord);
+            }
         }
 
         public static void RebuildIconCache()
@@ -503,30 +548,37 @@ namespace WinCleaner
                 {
                     try { p.Kill(); } catch { }
                 }
+
                 Thread.Sleep(400);
+
                 if (Directory.Exists(Paths.Thumbs))
                 {
                     foreach (var f in Directory.EnumerateFiles(Paths.Thumbs, "*cache*.db"))
                     {
-                        try { File.SetAttributes(f, FileAttributes.Normal); File.Delete(f); } catch { }
+                        try
+                        {
+                            File.SetAttributes(f, FileAttributes.Normal);
+                            File.Delete(f);
+                        }
+                        catch { }
                     }
                 }
             }
             catch { }
+
             StartHidden("explorer.exe");
         }
 
         public static string BatteryReport()
         {
             var dest = Path.Combine(Path.GetTempPath(), "pil-raporu.html");
-            RunHidden("powercfg.exe", "/batteryreport /output \"" + dest + "\"");
+            RunHidden("powercfg.exe", $"/batteryreport /output \"{dest}\"");
             return File.Exists(dest) ? dest : null;
         }
 
         public static bool CreateRestorePoint(string desc)
         {
-            RunHidden("wmic.exe",
-                "/Namespace:\\\\root\\default Path SystemRestore Call CreateRestorePoint \"" + desc + "\", 100, 7");
+            RunHidden("wmic.exe", $"/Namespace:\\\\root\\default Path SystemRestore Call CreateRestorePoint \"{desc}\", 100, 7");
             return true;
         }
     }
