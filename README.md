@@ -76,7 +76,7 @@ Since **Nimbus Cleaner** is an open-source tool built by an independent develope
 ### Building from Source
 1. Clone the repository:
    ```bash
-   git clone [https://github.com/egehansimarikk/Nimbus-Cleaner.git](https://github.com/egehansimarikk/Nimbus-Cleaner.git)
+   git clone https://github.com/egehansimarikk/Nimbus-Cleaner.git
 2. Open `WinCleaner.csproj` in Visual Studio 2022.
 3. Build the solution using **Release** mode (`x64`).
 
