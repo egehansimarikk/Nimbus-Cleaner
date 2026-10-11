@@ -4,7 +4,7 @@
 
   **Fast, Lightweight, and Modern Windows System Cleaner**
 
-  [![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)](https://github.com/egehansimarikk/Nimbus-Cleaner/releases)
+  [![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)](https://github.com/egehansimarikk/Nimbus-Cleaner/releases)
   [![Framework](https://img.shields.io/badge/.NET-Framework%204.8-purple.svg)](https://dotnet.microsoft.com/)
   [![Platform](https://img.shields.io/badge/platform-Windows%207%20%7C%2010%20%7C%2011-0078D6.svg)](https://www.microsoft.com/windows)
   [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
@@ -22,8 +22,9 @@
 
 <div align="center">
 
-  <img width="1631" height="895" alt="Nimbus " src="https://github.com/user-attachments/assets/8f29c708-1dd5-46f7-bfb2-9a7bb6edcb61" />
-<!-- Sürükleyip bıraktığın ANA ARAYÜZ (SS) resim kodunu tam buraya yapıştır -->
+  <img width="1631" height="895" alt="Nimbus " src="https://github.com/user-attachments/assets/2ba94c1a-7fa6-4bec-b64d-088c0a332c0f" />
+<!-- Sürükleyip<img width="1630" height="903" alt="Screenshot 2026-10-11 180050" src="https://github.com/user-attachments/assets/2ba94c1a-7fa6-4bec-b64d-088c0a332c0f" />
+ bıraktığın ANA ARAYÜZ (SS) resim kodunu tam buraya yapıştır -->
 
 </div>
 
@@ -69,7 +70,7 @@ Since **Nimbus Cleaner** is an open-source tool built by an independent develope
 ## 🚀 Getting Started
 
 ### Installation
-1. Download the latest installer (`NimbusCleaner_Setup_v1.1.0.exe`) from the [Releases](https://github.com/egehansimarikk/Nimbus-Cleaner/releases) page.
+1. Download the latest installer (`NimbusCleaner_Setup_v1.2.0.exe`) from the [Releases](https://github.com/egehansimarikk/Nimbus-Cleaner/releases) page.
 2. Run the setup wizard and follow the instructions.
 3. Launch **Nimbus Cleaner** from your Desktop or Start Menu.
 
