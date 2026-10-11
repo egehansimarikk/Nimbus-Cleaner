@@ -2,7 +2,7 @@
 ; Put Nimbus.exe in this folder after publishing, then Build.
 
 #define MyAppName      "Nimbus Cleaner"
-#define MyAppVersion   "7.0.0"
+#define MyAppVersion   "1.2.0"
 #define MyAppPublisher "Nimbus"
 #define MyAppExeName   "Nimbus.exe"
 

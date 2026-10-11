@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -19,6 +20,7 @@ namespace WinCleaner
         public Color Header { get; set; }
         public Color Accent { get; set; }
         public Color Accent2 { get; set; }
+        public Color Accent2Fg { get; set; }
         public Color Fg { get; set; }
         public Color Muted { get; set; }
         public Color Line { get; set; }
@@ -26,10 +28,10 @@ namespace WinCleaner
         public Color SideSel { get; set; }
         public Color Btn { get; set; }
 
-        public static Palette Make(string name, bool dark, Color bg, Color sidebar, Color card, Color header, Color accent, Color accent2, Color fg, Color muted, Color line, Color log, Color sideSel, Color btn) =>
-            new Palette { Name = name, Dark = dark, Bg = bg, Sidebar = sidebar, Card = card, Header = header, Accent = accent, Accent2 = accent2, Fg = fg, Muted = muted, Line = line, LogBg = log, SideSel = sideSel, Btn = btn };
+        public static Palette Make(string name, bool dark, Color bg, Color sidebar, Color card, Color header, Color accent, Color accent2, Color fg, Color muted, Color line, Color log, Color sideSel, Color btn, Color? accent2Fg = null) =>
+            new Palette { Name = name, Dark = dark, Bg = bg, Sidebar = sidebar, Card = card, Header = header, Accent = accent, Accent2 = accent2, Accent2Fg = accent2Fg ?? Color.White, Fg = fg, Muted = muted, Line = line, LogBg = log, SideSel = sideSel, Btn = btn };
 
-        public static readonly string[] Keys = { "night", "day", "nord", "forest", "sunset", "purple", "ocean", "graphite", "contrast", "sakura" };
+        public static readonly string[] Keys = { "night", "day", "nord", "forest", "sunset", "purple", "ocean", "graphite", "contrast", "sakura", "cyberGrape", "quantumBlue" };
 
         public static readonly Palette[] All =
         {
@@ -43,9 +45,12 @@ namespace WinCleaner
             Make("Grafit", true, C(24,24,27), C(18,18,20), C(39,39,42), C(63,63,70), C(212,212,216), C(82,82,91), C(250,250,250), C(161,161,170), C(63,63,70), C(9,9,11), C(63,63,70), C(39,39,42)),
             Make("Kontrast", true, C(0,0,0), C(0,0,0), C(20,20,20), C(0,0,0), C(250,204,21), C(250,204,21), C(255,255,255), C(250,204,21), C(250,204,21), C(0,0,0), C(40,40,0), C(20,20,20)),
             Make("Sakura", false, C(255,241,242), C(255,255,255), C(255,255,255), C(225,29,72), C(244,63,94), C(225,29,72), C(76,5,25), C(159,18,57), C(254,205,211), C(255,228,230), C(255,228,230), C(255,241,242)),
+            Make("Cyber Grape / Acid Lime", true, H("#1F1B24"), H("#17131C"), H("#2A2432"), H("#6D28D9"), H("#6D28D9"), H("#D7FF00"), H("#FFFFFF"), H("#C4B5FD"), H("#4B3B5C"), H("#100D14"), H("#3B2A56"), H("#2A2432"), H("#1F1B24")),
+            Make("Quantum Blue / Ice Glass", true, H("#0F172A"), H("#0B1220"), H("#17233A"), H("#2457FF"), H("#2457FF"), H("#DFF7FF"), H("#F8FAFC"), H("#CBD5E1"), H("#334155"), H("#080F1E"), H("#1E3A8A"), H("#17233A"), H("#0F172A")),
         };
 
         private static Color C(int r, int g, int b) => Color.FromArgb(r, g, b);
+        private static Color H(string html) => ColorTranslator.FromHtml(html);
 
         public static Palette ByName(string name)
         {
@@ -67,10 +72,15 @@ namespace WinCleaner
         private TextBox _log;
         private Label _stats, _status, _sysBody, _brand, _brandSub, _logTitle, _hdrTitle, _themeHead, _langHead;
         private Button _btnScan, _btnClean, _btnStop, _themeBtn;
-        private Panel _sidebar, _header, _logDock, _actionBar, _host;
+        private Label _ramValue, _cpuValue;
+        private Panel _sidebar, _header, _logDock, _actionBar, _host, _monitorCard, _ramTrack, _cpuTrack, _ramFill, _cpuFill;
+        private System.Windows.Forms.Timer _monitorTimer;
+        private PerformanceCounter _cpuCounter;
         private CancellationTokenSource _cts;
 
         private bool _busy, _syncing;
+        private bool _monitorClosing, _cpuCounterNeedsWarmup;
+        private int _monitorSamplePending, _ramPercent, _cpuPercent;
         private string _mode = "standart", _page = "clean";
 
         private static string SettingsDir
@@ -107,6 +117,7 @@ namespace WinCleaner
             ApplyMode("standart");
             ShowPage("clean");
             UpdateStats();
+            StartSystemMonitor();
 
             Log($"{S.G("log.start")} ({CleanEngine.AppVersion})");
             Log(CleanEngine.IsAdmin ? S.G("log.admin") : S.G("log.user"));
@@ -116,6 +127,22 @@ namespace WinCleaner
         {
             base.OnHandleCreated(e);
             WinApi.TryDarkTitle(Handle);
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            if (e.Cancel) return;
+
+            _monitorClosing = true;
+            if (_monitorTimer != null)
+            {
+                _monitorTimer.Stop();
+                _monitorTimer.Dispose();
+                _monitorTimer = null;
+            }
+
+            if (Volatile.Read(ref _monitorSamplePending) == 0) DisposeCpuCounter();
         }
 
         private void LoadTheme()
@@ -286,8 +313,9 @@ namespace WinCleaner
         private Panel BuildCleanPage()
         {
             var page = new Panel { Padding = new Padding(10, 6, 10, 6), AutoScroll = true };
-            var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 2 };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
             root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
             root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
 
             var modes = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
@@ -305,10 +333,121 @@ namespace WinCleaner
             grid.Controls.Add(CatCard("cat.sys", "dumps", "wer", "java", "npm", "onedrive", "do", "logs", "wintemp", "prefetch", "minidump", "update", "oldwin"), 1, 1);
 
             root.Controls.Add(modes, 0, 0);
-            root.Controls.Add(grid, 0, 1);
+            root.Controls.Add(BuildMonitorWidget(), 0, 1);
+            root.Controls.Add(grid, 0, 2);
             page.Controls.Add(root);
 
             return page;
+        }
+
+        private Control BuildMonitorWidget()
+        {
+            _monitorCard = new Panel { Dock = DockStyle.Fill, Margin = new Padding(7, 0, 7, 8), Padding = new Padding(10, 4, 10, 4) };
+            var meters = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+            meters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            meters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+
+            meters.Controls.Add(BuildMonitorMeter("RAM", out _ramValue, out _ramTrack, out _ramFill), 0, 0);
+            meters.Controls.Add(BuildMonitorMeter("CPU", out _cpuValue, out _cpuTrack, out _cpuFill), 1, 0);
+            _ramTrack.Resize += (_, __) => UpdateMonitorBar(_ramTrack, _ramFill, _ramPercent);
+            _cpuTrack.Resize += (_, __) => UpdateMonitorBar(_cpuTrack, _cpuFill, _cpuPercent);
+            _monitorCard.Controls.Add(meters);
+            return _monitorCard;
+        }
+
+        private Control BuildMonitorMeter(string name, out Label value, out Panel track, out Panel fill)
+        {
+            var meter = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8, 3, 12, 3) };
+            value = new Label { Text = name + ": --%", Dock = DockStyle.Top, Height = 22, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI Semibold", 9f) };
+            track = new Panel { Dock = DockStyle.Top, Height = 10, Margin = new Padding(0, 2, 0, 0) };
+            fill = new Panel { Dock = DockStyle.Left, Width = 0 };
+            track.Controls.Add(fill);
+            meter.Controls.Add(track);
+            meter.Controls.Add(value);
+            return meter;
+        }
+
+        private void StartSystemMonitor()
+        {
+            try
+            {
+                _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true);
+                _cpuCounterNeedsWarmup = true;
+            }
+            catch
+            {
+                DisposeCpuCounter();
+            }
+
+            _monitorTimer = new System.Windows.Forms.Timer { Interval = 2000 };
+            _monitorTimer.Tick += MonitorTimerTick;
+            _monitorTimer.Start();
+        }
+
+        private async void MonitorTimerTick(object sender, EventArgs e)
+        {
+            if (Interlocked.Exchange(ref _monitorSamplePending, 1) != 0) return;
+
+            try
+            {
+                var sample = await Task.Run(() =>
+                {
+                    int? ram = null;
+                    int? cpu = null;
+                    try
+                    {
+                        int usage;
+                        if (WinApi.TryGetMemoryUsage(out usage)) ram = Math.Max(0, Math.Min(100, usage));
+                    }
+                    catch { }
+
+                    try
+                    {
+                        var counter = _cpuCounter;
+                        if (counter != null)
+                        {
+                            var value = counter.NextValue();
+                            if (_cpuCounterNeedsWarmup) _cpuCounterNeedsWarmup = false;
+                            else cpu = Math.Max(0, Math.Min(100, (int)Math.Round(value)));
+                        }
+                    }
+                    catch { }
+
+                    return Tuple.Create(ram, cpu);
+                });
+
+                if (!_monitorClosing && !IsDisposed && !Disposing)
+                    UpdateMonitorValues(sample.Item1, sample.Item2);
+            }
+            catch { }
+            finally
+            {
+                Interlocked.Exchange(ref _monitorSamplePending, 0);
+                if (_monitorClosing) DisposeCpuCounter();
+            }
+        }
+
+        private void UpdateMonitorValues(int? ram, int? cpu)
+        {
+            _ramValue.Text = ram.HasValue ? $"RAM: {ram.Value}%" : "RAM: --%";
+            _cpuValue.Text = cpu.HasValue ? $"CPU: {cpu.Value}%" : "CPU: --%";
+            _ramPercent = ram.GetValueOrDefault();
+            _cpuPercent = cpu.GetValueOrDefault();
+            UpdateMonitorBar(_ramTrack, _ramFill, _ramPercent);
+            UpdateMonitorBar(_cpuTrack, _cpuFill, _cpuPercent);
+        }
+
+        private void UpdateMonitorBar(Panel track, Panel fill, int percent)
+        {
+            if (track == null || fill == null) return;
+            fill.Width = (int)Math.Round(track.ClientSize.Width * Math.Max(0, Math.Min(100, percent)) / 100.0);
+        }
+
+        private void DisposeCpuCounter()
+        {
+            if (_cpuCounter == null) return;
+            _cpuCounter.Dispose();
+            _cpuCounter = null;
         }
 
         private Panel BuildToolsPage()
@@ -322,7 +461,7 @@ namespace WinCleaner
 
             grid.Controls.Add(ToolCard("grp.bakim", Tool("tool.explorer", async () => await CleanEngine.RestartExplorerAsync()), Tool("tool.icons", () => CleanEngine.RebuildIconCache()), Tool("tool.clip", () => CleanEngine.ClearClipboardRetry()), Tool("tool.restore", () => { if (NeedAdmin("restore")) CleanEngine.CreateRestorePoint("Cleanup"); })), 0, 0);
             grid.Controls.Add(ToolCard("grp.win", Tool("tool.cleanmgr", () => CleanEngine.StartHidden("cleanmgr.exe", "/d C")), Tool("tool.taskmgr", () => CleanEngine.StartHidden("taskmgr.exe")), Tool("tool.apps", () => CleanEngine.StartHidden("appwiz.cpl")), Tool("tool.services", () => CleanEngine.StartHidden("services.msc")), Tool("tool.devmgmt", () => CleanEngine.StartHidden("devmgmt.msc"))), 1, 0);
-            grid.Controls.Add(ToolCard("grp.disk", Tool("tool.diskmgmt", () => CleanEngine.StartHidden("diskmgmt.msc")), Tool("tool.defrag", () => CleanEngine.RunHidden("defrag.exe", "C: /O")), Tool("tool.battery", () => { var f = CleanEngine.BatteryReport(); if (f != null) CleanEngine.StartHidden(f); }), Tool("tool.balanced", () => CleanEngine.RunHidden("powercfg.exe", "/setactive SCHEME_BALANCED")), Tool("tool.high", () => CleanEngine.RunHidden("powercfg.exe", "/setactive SCHEME_MAX"))), 0, 1);
+            grid.Controls.Add(ToolCard("grp.disk", NamedBtn("tool.diskAnalyzer", () => { using (var analyzer = new DiskAnalyzerForm(_t)) analyzer.ShowDialog(this); }), Tool("tool.diskmgmt", () => CleanEngine.StartHidden("diskmgmt.msc")), Tool("tool.defrag", () => CleanEngine.RunHidden("defrag.exe", "C: /O")), Tool("tool.battery", () => { var f = CleanEngine.BatteryReport(); if (f != null) CleanEngine.StartHidden(f); }), Tool("tool.balanced", () => CleanEngine.RunHidden("powercfg.exe", "/setactive SCHEME_BALANCED")), Tool("tool.high", () => CleanEngine.RunHidden("powercfg.exe", "/setactive SCHEME_MAX"))), 0, 1);
             grid.Controls.Add(ToolCard("grp.adv", Tool("tool.sfc", () => { if (NeedAdmin("SFC")) CleanEngine.RunHidden("sfc.exe", "/scannow"); }), Tool("tool.event", () => CleanEngine.StartHidden("eventvwr.msc")), Tool("tool.store", () => CleanEngine.StartHidden("wsreset.exe")), Tool("tool.dism", () => { if (NeedAdmin("DISM")) CleanEngine.RunHidden("dism.exe", "/Online /Cleanup-Image /CheckHealth"); }), Tool("tool.resmon", () => CleanEngine.StartHidden("resmon.exe")), Tool("tool.spool", () => { if (!NeedAdmin("spool")) return; CleanEngine.RunHidden("net.exe", "stop spooler"); CleanEngine.CleanTree(Paths.Spool, CancellationToken.None); CleanEngine.RunHidden("net.exe", "start spooler"); }), Tool(CleanEngine.IsAdmin ? "tool.adminok" : "tool.admin", RestartAdmin)), 1, 1);
 
             page.Controls.Add(grid);
@@ -530,7 +669,7 @@ namespace WinCleaner
             {
                 bool on = (string)b.Tag == _mode;
                 b.BackColor = on ? _t.Accent2 : _t.Card;
-                b.ForeColor = on ? Color.White : _t.Fg;
+                b.ForeColor = on ? _t.Accent2Fg : _t.Fg;
                 b.FlatAppearance.BorderColor = on ? _t.Accent : _t.Line;
             }
         }
@@ -629,6 +768,13 @@ namespace WinCleaner
             _log.ForeColor = _t.Dark ? Color.FromArgb(203, 213, 225) : Color.FromArgb(51, 65, 85);
 
             if (_sysBody != null) { _sysBody.BackColor = _t.Card; _sysBody.ForeColor = _t.Fg; }
+            if (_monitorCard != null) _monitorCard.BackColor = _t.Card;
+            if (_ramValue != null) { _ramValue.BackColor = _t.Card; _ramValue.ForeColor = _t.Fg; }
+            if (_cpuValue != null) { _cpuValue.BackColor = _t.Card; _cpuValue.ForeColor = _t.Fg; }
+            if (_ramTrack != null) _ramTrack.BackColor = _t.Line;
+            if (_cpuTrack != null) _cpuTrack.BackColor = _t.Line;
+            if (_ramFill != null) _ramFill.BackColor = _t.Accent;
+            if (_cpuFill != null) _cpuFill.BackColor = _t.Accent;
             if (_themeHead != null) { _themeHead.ForeColor = _t.Fg; _themeHead.BackColor = _t.Bg; }
             if (_langHead != null) { _langHead.ForeColor = _t.Fg; _langHead.BackColor = _t.Bg; }
 
@@ -661,7 +807,7 @@ namespace WinCleaner
                     {
                         bool primary = tag == "primary";
                         b.BackColor = primary ? _t.Accent2 : _t.Btn;
-                        b.ForeColor = primary || _t.Dark ? Color.White : _t.Fg;
+                        b.ForeColor = primary ? _t.Accent2Fg : _t.Dark ? Color.White : _t.Fg;
                         if (!primary && !_t.Dark) b.ForeColor = _t.Fg;
                         b.FlatAppearance.BorderColor = primary ? _t.Accent2 : _t.Line;
                     }

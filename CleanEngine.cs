@@ -82,7 +82,7 @@ namespace WinCleaner
 
     public static class CleanEngine
     {
-        public const string AppVersion = "v1.1.0";
+        public const string AppVersion = "v1.2.0";
 
         public static bool IsAdmin => WinApi.IsUserAnAdmin();
 
