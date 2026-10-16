@@ -1,0 +1,7 @@
+C:\Users\egeha\source\repos\Nimbus-Cleaner\bin\Release\net48\Nimbus.exe
+C:\Users\egeha\source\repos\Nimbus-Cleaner\obj\Release\net48\WinCleaner.csproj.AssemblyReference.cache
+C:\Users\egeha\source\repos\Nimbus-Cleaner\obj\Release\net48\WinCleaner.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\egeha\source\repos\Nimbus-Cleaner\obj\Release\net48\WinCleaner.AssemblyInfoInputs.cache
+C:\Users\egeha\source\repos\Nimbus-Cleaner\obj\Release\net48\WinCleaner.AssemblyInfo.cs
+C:\Users\egeha\source\repos\Nimbus-Cleaner\obj\Release\net48\WinCleaner.csproj.CoreCompileInputs.cache
+C:\Users\egeha\source\repos\Nimbus-Cleaner\obj\Release\net48\Nimbus.exe

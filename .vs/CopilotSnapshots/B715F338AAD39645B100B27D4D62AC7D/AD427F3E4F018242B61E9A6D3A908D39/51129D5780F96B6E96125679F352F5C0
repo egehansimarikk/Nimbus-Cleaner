@@ -1,0 +1,1031 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Drawing;
+using System.IO;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace WinCleaner
+{
+    internal sealed class Palette
+    {
+        public string Name { get; set; }
+        public bool Dark { get; set; }
+        public Color Bg { get; set; }
+        public Color Sidebar { get; set; }
+        public Color Card { get; set; }
+        public Color Header { get; set; }
+        public Color Accent { get; set; }
+        public Color Accent2 { get; set; }
+        public Color Accent2Fg { get; set; }
+        public Color Fg { get; set; }
+        public Color Muted { get; set; }
+        public Color Line { get; set; }
+        public Color LogBg { get; set; }
+        public Color SideSel { get; set; }
+        public Color Btn { get; set; }
+
+        public static Palette Make(string name, bool dark, Color bg, Color sidebar, Color card, Color header, Color accent, Color accent2, Color fg, Color muted, Color line, Color log, Color sideSel, Color btn, Color? accent2Fg = null) =>
+            new Palette { Name = name, Dark = dark, Bg = bg, Sidebar = sidebar, Card = card, Header = header, Accent = accent, Accent2 = accent2, Accent2Fg = accent2Fg ?? Color.White, Fg = fg, Muted = muted, Line = line, LogBg = log, SideSel = sideSel, Btn = btn };
+
+        public static readonly string[] Keys = { "night", "day", "nord", "forest", "sunset", "purple", "ocean", "graphite", "contrast", "sakura", "cyberGrape", "quantumBlue" };
+
+        public static readonly Palette[] All =
+        {
+            Make("Gece", true, C(11,18,32), C(8,14,26), C(22,32,50), C(15,118,110), C(45,212,191), C(13,148,136), C(241,245,249), C(148,163,184), C(51,65,85), C(2,8,20), C(19,78,74), C(30,41,59)),
+            Make("Gün", false, C(241,245,249), C(255,255,255), C(255,255,255), C(13,148,136), C(15,118,110), C(13,148,136), C(15,23,42), C(100,116,139), C(226,232,240), C(248,250,252), C(204,251,241), C(241,245,249)),
+            Make("Nord", true, C(46,52,64), C(59,66,82), C(67,76,94), C(94,129,172), C(136,192,208), C(94,129,172), C(236,239,244), C(163,177,198), C(76,86,106), C(39,44,54), C(76,86,106), C(59,66,82)),
+            Make("Orman", true, C(12,24,16), C(8,18,12), C(20,38,24), C(22,101,52), C(74,222,128), C(21,128,61), C(236,253,245), C(134,239,172), C(22,101,52), C(6,16,10), C(20,83,45), C(20,38,24)),
+            Make("Gün batımı", true, C(28,16,12), C(22,12,10), C(42,24,18), C(194,65,12), C(251,146,60), C(234,88,12), C(255,247,237), C(253,186,116), C(124,45,18), C(20,10,8), C(154,52,18), C(42,24,18)),
+            Make("Mor", true, C(24,16,40), C(18,12,32), C(36,24,56), C(109,40,217), C(192,132,252), C(124,58,237), C(250,245,255), C(196,181,253), C(88,28,135), C(12,8,24), C(88,28,135), C(36,24,56)),
+            Make("Okyanus", true, C(8,20,36), C(6,14,28), C(15,32,56), C(3,105,161), C(56,189,248), C(2,132,199), C(240,249,255), C(125,211,252), C(12,74,110), C(4,12,24), C(7,89,133), C(15,32,56)),
+            Make("Grafit", true, C(24,24,27), C(18,18,20), C(39,39,42), C(63,63,70), C(212,212,216), C(82,82,91), C(250,250,250), C(161,161,170), C(63,63,70), C(9,9,11), C(63,63,70), C(39,39,42)),
+            Make("Kontrast", true, C(0,0,0), C(0,0,0), C(20,20,20), C(0,0,0), C(250,204,21), C(250,204,21), C(255,255,255), C(250,204,21), C(250,204,21), C(0,0,0), C(40,40,0), C(20,20,20)),
+            Make("Sakura", false, C(255,241,242), C(255,255,255), C(255,255,255), C(225,29,72), C(244,63,94), C(225,29,72), C(76,5,25), C(159,18,57), C(254,205,211), C(255,228,230), C(255,228,230), C(255,241,242)),
+            Make("Cyber Grape / Acid Lime", true, H("#1F1B24"), H("#17131C"), H("#2A2432"), H("#6D28D9"), H("#6D28D9"), H("#D7FF00"), H("#FFFFFF"), H("#C4B5FD"), H("#4B3B5C"), H("#100D14"), H("#3B2A56"), H("#2A2432"), H("#1F1B24")),
+            Make("Quantum Blue / Ice Glass", true, H("#0F172A"), H("#0B1220"), H("#17233A"), H("#2457FF"), H("#2457FF"), H("#DFF7FF"), H("#F8FAFC"), H("#CBD5E1"), H("#334155"), H("#080F1E"), H("#1E3A8A"), H("#17233A"), H("#0F172A")),
+        };
+
+        private static Color C(int r, int g, int b) => Color.FromArgb(r, g, b);
+        private static Color H(string html) => ColorTranslator.FromHtml(html);
+
+        public static Palette ByName(string name)
+        {
+            return All.FirstOrDefault(p => string.Equals(p.Name, name, StringComparison.OrdinalIgnoreCase)) ?? All[0];
+        }
+    }
+
+    public sealed class MainForm : Form
+    {
+        private Palette _t = Palette.All[0];
+        private int _themeIndex;
+        private readonly Dictionary<string, CheckBox> _items = new Dictionary<string, CheckBox>();
+        private readonly List<Button> _modeBtns = new List<Button>();
+        private readonly List<Button> _navBtns = new List<Button>();
+        private readonly List<Control> _cards = new List<Control>();
+        private readonly List<Label> _cardHeads = new List<Label>();
+        private readonly Dictionary<string, Panel> _pages = new Dictionary<string, Panel>();
+
+        private TextBox _log;
+        private Label _stats, _status, _sysBody, _brand, _brandSub, _logTitle, _hdrTitle, _themeHead, _langHead;
+        private Button _btnScan, _btnClean, _btnStop, _themeBtn;
+        private Label _ramValue, _cpuValue;
+        private Panel _sidebar, _header, _logDock, _actionBar, _host, _monitorCard, _ramTrack, _cpuTrack, _ramFill, _cpuFill;
+        private System.Windows.Forms.Timer _monitorTimer;
+        private PerformanceCounter _cpuCounter;
+        private CancellationTokenSource _cts;
+
+        private bool _busy, _syncing;
+        private bool _monitorClosing;
+        private int _monitorSamplePending, _ramPercent, _cpuPercent;
+        private string _mode = "standart", _page = "clean";
+
+        private static string SettingsDir
+        {
+            get
+            {
+                var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "NimbusCleaner");
+                try { Directory.CreateDirectory(dir); } catch { }
+                return dir;
+            }
+        }
+
+        private static string ThemeFile => Path.Combine(SettingsDir, "tema.txt");
+        private static string LangFile => Path.Combine(SettingsDir, "dil.txt");
+
+        private static readonly HashSet<string> AdminItems = new HashSet<string> { "do", "logs", "wintemp", "prefetch", "minidump", "update", "oldwin" };
+
+        public MainForm()
+        {
+            Font = new Font("Segoe UI", 9.25f);
+            DoubleBuffered = true;
+            AutoScaleMode = AutoScaleMode.Dpi;
+            StartPosition = FormStartPosition.Manual;
+
+            LoadTheme();
+            LoadLang();
+
+            Text = $"{S.G("app.title")} {CleanEngine.AppVersion}";
+            TryLoadIcon();
+            FitToScreen();
+            BuildUi();
+            ApplyTheme();
+            ApplyLanguage();
+            ApplyMode("standart");
+            ShowPage("clean");
+            UpdateStats();
+            StartSystemMonitor();
+
+            Log($"{S.G("log.start")} ({CleanEngine.AppVersion})");
+            Log(CleanEngine.IsAdmin ? S.G("log.admin") : S.G("log.user"));
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+            WinApi.TryDarkTitle(Handle);
+        }
+
+        protected override void OnFormClosing(FormClosingEventArgs e)
+        {
+            base.OnFormClosing(e);
+            if (e.Cancel) return;
+
+            _monitorClosing = true;
+            if (_monitorTimer != null)
+            {
+                _monitorTimer.Stop();
+                _monitorTimer.Dispose();
+                _monitorTimer = null;
+            }
+
+            if (Volatile.Read(ref _monitorSamplePending) == 0) DisposeCpuCounter();
+        }
+
+        private void LoadTheme()
+        {
+            try
+            {
+                if (File.Exists(ThemeFile))
+                    _t = Palette.ByName(File.ReadAllText(ThemeFile).Trim());
+            }
+            catch { }
+
+            _themeIndex = Math.Max(0, Array.FindIndex(Palette.All, p => p.Name == _t.Name));
+        }
+
+        private void LoadLang()
+        {
+            S.Detect();
+            try
+            {
+                if (File.Exists(LangFile))
+                {
+                    var c = File.ReadAllText(LangFile).Trim();
+                    if (Array.IndexOf(S.Codes, c) >= 0) S.Code = c;
+                }
+            }
+            catch { }
+        }
+
+        private void SetLang(string code)
+        {
+            S.Code = code;
+            try { File.WriteAllText(LangFile, code); } catch { }
+            ApplyLanguage();
+            Log($"{S.G("log.lang")}: {code}");
+        }
+
+        private void SetTheme(Palette p)
+        {
+            _t = p;
+            _themeIndex = Math.Max(0, Array.FindIndex(Palette.All, x => x.Name == p.Name));
+            try { File.WriteAllText(ThemeFile, p.Name); } catch { }
+            ApplyTheme();
+            Log($"{S.G("log.theme")}: {p.Name}");
+        }
+
+        private void CycleTheme()
+        {
+            _themeIndex = (_themeIndex + 1) % Palette.All.Length;
+            SetTheme(Palette.All[_themeIndex]);
+        }
+
+        private void TryLoadIcon()
+        {
+            try
+            {
+                var ico = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "app.ico");
+                Icon = File.Exists(ico) ? new Icon(ico) : Icon.ExtractAssociatedIcon(Application.ExecutablePath);
+            }
+            catch { }
+        }
+
+        private void FitToScreen()
+        {
+            var wa = Screen.PrimaryScreen.WorkingArea;
+            int w = (int)(wa.Width * 0.86);
+            int h = (int)(wa.Height * 0.88);
+
+            w = Math.Max(1100, Math.Min(w, wa.Width - 16));
+            h = Math.Max(760, Math.Min(h, wa.Height - 16));
+
+            MinimumSize = new Size(Math.Min(960, w), Math.Min(640, h));
+            Size = new Size(w, h);
+            Left = wa.Left + (wa.Width - w) / 2;
+            Top = wa.Top + (wa.Height - h) / 2;
+        }
+
+        private void BuildUi()
+        {
+            _sidebar = new Panel { Dock = DockStyle.Left, Width = 196 };
+            _brand = new Label { Dock = DockStyle.Top, Height = 52, TextAlign = ContentAlignment.BottomLeft, Padding = new Padding(18, 0, 8, 0), Font = new Font("Segoe UI Semibold", 12.5f) };
+            _brandSub = new Label { Dock = DockStyle.Top, Height = 22, Padding = new Padding(18, 0, 8, 0), Font = new Font("Segoe UI", 8f) };
+
+            var nav = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(12, 16, 12, 12) };
+            foreach (var id in new[] { "clean", "tools", "sys", "net", "set" }) nav.Controls.Add(Nav(id));
+
+            _themeBtn = MakeBtn("", false, 168);
+            _themeBtn.Dock = DockStyle.Bottom;
+            _themeBtn.Click += (_, __) => CycleTheme();
+
+            var sideBottom = new Panel { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(14, 8, 14, 12) };
+            sideBottom.Controls.Add(_themeBtn);
+
+            _sidebar.Controls.Add(nav);
+            _sidebar.Controls.Add(sideBottom);
+            _sidebar.Controls.Add(_brandSub);
+            _sidebar.Controls.Add(_brand);
+
+            _header = new Panel { Dock = DockStyle.Top, Height = 72, Padding = new Padding(22, 12, 22, 10) };
+            _hdrTitle = new Label { Font = new Font("Segoe UI Semibold", 15f), Dock = DockStyle.Top, Height = 28 };
+            _stats = new Label { Dock = DockStyle.Top, Height = 22 };
+            _header.Controls.Add(_stats); _header.Controls.Add(_hdrTitle);
+
+            _logDock = new Panel { Dock = DockStyle.Bottom, Height = Height < 800 ? 112 : 140, Padding = new Padding(18, 4, 18, 12) };
+            _logTitle = new Label { Dock = DockStyle.Top, Height = 20 };
+            _log = new TextBox { Multiline = true, ReadOnly = true, ScrollBars = ScrollBars.Vertical, Dock = DockStyle.Fill, Font = new Font("Consolas", 8.5f), BorderStyle = BorderStyle.FixedSingle };
+            _logDock.Controls.Add(_log); _logDock.Controls.Add(_logTitle);
+
+            _actionBar = new Panel { Dock = DockStyle.Bottom, Height = 56, Padding = new Padding(18, 8, 18, 8) };
+            _status = new Label { Dock = DockStyle.Fill, TextAlign = ContentAlignment.MiddleLeft };
+
+            var actions = new FlowLayoutPanel { Dock = DockStyle.Right, Width = 420, FlowDirection = FlowDirection.RightToLeft, WrapContents = false };
+
+            _btnStop = MakeBtn("", false, 86);
+            _btnStop.Enabled = false;
+            _btnStop.Click += (_, __) => { try { _cts?.Cancel(); } catch { } };
+
+            _btnClean = MakeBtn("", true, 118);
+            _btnClean.Click += async (_, __) => await RunJobAsync(S.G("btn.clean"), CleanSelectedAsync);
+
+            _btnScan = MakeBtn("", false, 86);
+            _btnScan.Click += async (_, __) => await RunJobAsync(S.G("btn.scan"), ScanSelectedAsync);
+
+            actions.Controls.Add(_btnClean); actions.Controls.Add(_btnScan); actions.Controls.Add(_btnStop);
+            _actionBar.Controls.Add(_status); _actionBar.Controls.Add(actions);
+
+            _host = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8) };
+            _pages["clean"] = BuildCleanPage();
+            _pages["tools"] = BuildToolsPage();
+            _pages["sys"] = BuildSysPage();
+            _pages["net"] = BuildNetPage();
+            _pages["set"] = BuildSetPage();
+
+            foreach (var p in _pages.Values)
+            {
+                p.Dock = DockStyle.Fill;
+                p.Visible = false;
+                _host.Controls.Add(p);
+            }
+
+            Controls.Add(_host);
+            Controls.Add(_actionBar);
+            Controls.Add(_logDock);
+            Controls.Add(_header);
+            Controls.Add(_sidebar);
+        }
+
+        private Button Nav(string id)
+        {
+            var b = new Button { Tag = id, Width = 168, Height = 38, FlatStyle = FlatStyle.Flat, TextAlign = ContentAlignment.MiddleLeft, Cursor = Cursors.Hand, Font = new Font("Segoe UI Semibold", 9.5f), Margin = new Padding(0, 0, 0, 6) };
+            b.FlatAppearance.BorderSize = 0;
+            b.Click += (_, __) => ShowPage(id);
+            _navBtns.Add(b);
+            return b;
+        }
+
+        private void ShowPage(string id)
+        {
+            _page = id;
+            foreach (var kv in _pages) kv.Value.Visible = kv.Key == id;
+
+            _hdrTitle.Text = S.G("page." + id);
+            PaintNav();
+            _actionBar.Visible = id == "clean";
+
+            if (id == "sys") RefreshSysPage();
+        }
+
+        private Panel BuildCleanPage()
+        {
+            var page = new Panel { Padding = new Padding(10, 6, 10, 6), AutoScroll = true };
+            var root = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 1, RowCount = 3 };
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 48));
+            root.RowStyles.Add(new RowStyle(SizeType.Absolute, 78));
+            root.RowStyles.Add(new RowStyle(SizeType.Percent, 100));
+
+            var modes = new FlowLayoutPanel { Dock = DockStyle.Fill, WrapContents = false };
+            foreach (var id in new[] { "hizli", "standart", "tam", "ozel" }) modes.Controls.Add(ModeChip(id));
+
+            var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+
+            grid.Controls.Add(CatCard("cat.basic", "temp", "recycle", "dns", "thumbs", "recent", "inet", "notify"), 0, 0);
+            grid.Controls.Add(CatCard("cat.apps", "browser", "discord", "teams", "steam", "spotify", "vscode", "roblox", "zoom", "telegram"), 1, 0);
+            grid.Controls.Add(CatCard("cat.gfx", "dx", "gpu", "font", "office", "adobe", "epic", "webview", "xbox", "photos"), 0, 1);
+            grid.Controls.Add(CatCard("cat.sys", "dumps", "wer", "java", "npm", "onedrive", "do", "logs", "wintemp", "prefetch", "minidump", "update", "oldwin"), 1, 1);
+
+            root.Controls.Add(modes, 0, 0);
+            root.Controls.Add(BuildMonitorWidget(), 0, 1);
+            root.Controls.Add(grid, 0, 2);
+            page.Controls.Add(root);
+
+            return page;
+        }
+
+        private Control BuildMonitorWidget()
+        {
+            _monitorCard = new Panel { Dock = DockStyle.Fill, Margin = new Padding(7, 0, 7, 8), Padding = new Padding(10, 4, 10, 4) };
+            var meters = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1 };
+            meters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            meters.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+
+            meters.Controls.Add(BuildMonitorMeter("RAM", out _ramValue, out _ramTrack, out _ramFill), 0, 0);
+            meters.Controls.Add(BuildMonitorMeter("CPU", out _cpuValue, out _cpuTrack, out _cpuFill), 1, 0);
+            _monitorCard.Controls.Add(meters);
+            return _monitorCard;
+        }
+
+        private Control BuildMonitorMeter(string name, out Label value, out Panel track, out Panel fill)
+        {
+            var meter = new Panel { Dock = DockStyle.Fill, Padding = new Padding(8, 3, 12, 3) };
+            value = new Label { Text = name + ": --%", Dock = DockStyle.Top, Height = 22, TextAlign = ContentAlignment.MiddleLeft, Font = new Font("Segoe UI Semibold", 9f) };
+            track = new Panel { Dock = DockStyle.Top, Height = 10, Margin = new Padding(0, 2, 0, 0) };
+            fill = new Panel { Dock = DockStyle.Left, Width = 0 };
+            track.Controls.Add(fill);
+            meter.Controls.Add(track);
+            meter.Controls.Add(value);
+            return meter;
+        }
+
+        private void StartSystemMonitor()
+        {
+            try
+            {
+                _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true);
+                _cpuCounter.NextValue();
+            }
+            catch
+            {
+                DisposeCpuCounter();
+            }
+
+            _monitorTimer = new System.Windows.Forms.Timer { Interval = 2000 };
+            _monitorTimer.Tick += MonitorTimerTick;
+            _monitorTimer.Start();
+        }
+
+        private async void MonitorTimerTick(object sender, EventArgs e)
+        {
+            if (Interlocked.Exchange(ref _monitorSamplePending, 1) != 0) return;
+
+            try
+            {
+                var sample = await Task.Run(() =>
+                {
+                    int? ram = null;
+                    int? cpu = null;
+                    try
+                    {
+                        int usage;
+                        if (WinApi.TryGetMemoryUsage(out usage)) ram = Math.Max(0, Math.Min(100, usage));
+                    }
+                    catch { }
+
+                    try
+                    {
+                        var counter = _cpuCounter;
+                        if (counter != null) cpu = Math.Max(0, Math.Min(100, (int)Math.Round(counter.NextValue())));
+                    }
+                    catch { }
+
+                    return Tuple.Create(ram, cpu);
+                });
+
+                if (!_monitorClosing && !IsDisposed && !Disposing)
+                    UpdateMonitorValues(sample.Item1, sample.Item2);
+            }
+            catch { }
+            finally
+            {
+                Interlocked.Exchange(ref _monitorSamplePending, 0);
+                if (_monitorClosing) DisposeCpuCounter();
+            }
+        }
+
+        private void UpdateMonitorValues(int? ram, int? cpu)
+        {
+            _ramValue.Text = ram.HasValue ? $"RAM: {ram.Value}%" : "RAM: --%";
+            _cpuValue.Text = cpu.HasValue ? $"CPU: {cpu.Value}%" : "CPU: --%";
+            _ramPercent = ram.GetValueOrDefault();
+            _cpuPercent = cpu.GetValueOrDefault();
+            UpdateMonitorBar(_ramTrack, _ramFill, _ramPercent);
+            UpdateMonitorBar(_cpuTrack, _cpuFill, _cpuPercent);
+        }
+
+        private void UpdateMonitorBar(Panel track, Panel fill, int percent)
+        {
+            if (track == null || fill == null) return;
+            fill.Width = (int)Math.Round(track.ClientSize.Width * Math.Max(0, Math.Min(100, percent)) / 100.0);
+        }
+
+        private void DisposeCpuCounter()
+        {
+            if (_cpuCounter == null) return;
+            _cpuCounter.Dispose();
+            _cpuCounter = null;
+        }
+
+        private Panel BuildToolsPage()
+        {
+            var page = new Panel { Padding = new Padding(10), AutoScroll = true };
+            var grid = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 2 };
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            grid.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+            grid.RowStyles.Add(new RowStyle(SizeType.Percent, 50));
+
+            grid.Controls.Add(ToolCard("grp.bakim", Tool("tool.explorer", async () => await CleanEngine.RestartExplorerAsync()), Tool("tool.icons", () => CleanEngine.RebuildIconCache()), Tool("tool.clip", () => CleanEngine.ClearClipboardRetry()), Tool("tool.restore", () => { if (NeedAdmin("restore")) CleanEngine.CreateRestorePoint("Cleanup"); })), 0, 0);
+            grid.Controls.Add(ToolCard("grp.win", Tool("tool.cleanmgr", () => CleanEngine.StartHidden("cleanmgr.exe", "/d C")), Tool("tool.taskmgr", () => CleanEngine.StartHidden("taskmgr.exe")), Tool("tool.apps", () => CleanEngine.StartHidden("appwiz.cpl")), Tool("tool.services", () => CleanEngine.StartHidden("services.msc")), Tool("tool.devmgmt", () => CleanEngine.StartHidden("devmgmt.msc"))), 1, 0);
+            grid.Controls.Add(ToolCard("grp.disk", Tool("tool.diskmgmt", () => CleanEngine.StartHidden("diskmgmt.msc")), Tool("tool.defrag", () => CleanEngine.RunHidden("defrag.exe", "C: /O")), Tool("tool.battery", () => { var f = CleanEngine.BatteryReport(); if (f != null) CleanEngine.StartHidden(f); }), Tool("tool.balanced", () => CleanEngine.RunHidden("powercfg.exe", "/setactive SCHEME_BALANCED")), Tool("tool.high", () => CleanEngine.RunHidden("powercfg.exe", "/setactive SCHEME_MAX"))), 0, 1);
+            grid.Controls.Add(ToolCard("grp.adv", Tool("tool.sfc", () => { if (NeedAdmin("SFC")) CleanEngine.RunHidden("sfc.exe", "/scannow"); }), Tool("tool.event", () => CleanEngine.StartHidden("eventvwr.msc")), Tool("tool.store", () => CleanEngine.StartHidden("wsreset.exe")), Tool("tool.dism", () => { if (NeedAdmin("DISM")) CleanEngine.RunHidden("dism.exe", "/Online /Cleanup-Image /CheckHealth"); }), Tool("tool.resmon", () => CleanEngine.StartHidden("resmon.exe")), Tool("tool.spool", () => { if (!NeedAdmin("spool")) return; CleanEngine.RunHidden("net.exe", "stop spooler"); CleanEngine.CleanTree(Paths.Spool, CancellationToken.None); CleanEngine.RunHidden("net.exe", "start spooler"); }), Tool(CleanEngine.IsAdmin ? "tool.adminok" : "tool.admin", RestartAdmin)), 1, 1);
+
+            page.Controls.Add(grid);
+            return page;
+        }
+
+        private Panel BuildSysPage()
+        {
+            var page = new Panel { Padding = new Padding(16), AutoScroll = true };
+            var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 48, WrapContents = false };
+            top.Controls.Add(BarBtn("sys.refresh", async () => await RunJobAsync(S.G("sys.refresh"), () => { RefreshSysPage(); return Task.CompletedTask; })));
+            top.Controls.Add(BarBtn("sys.temp", () => CleanEngine.StartHidden("explorer.exe", Paths.TempUser)));
+            top.Controls.Add(BarBtn("sys.startup", () => CleanEngine.StartHidden("explorer.exe", "shell:startup")));
+            top.Controls.Add(BarBtn("sys.copy", () => { try { Clipboard.SetText(_sysBody.Text); } catch { } }));
+
+            _sysBody = new Label { Dock = DockStyle.Fill, Padding = new Padding(16), Font = new Font("Segoe UI", 10f) };
+            page.Controls.Add(_sysBody);
+            page.Controls.Add(top);
+            return page;
+        }
+
+        private Panel BuildNetPage()
+        {
+            var page = new Panel { Padding = new Padding(16), AutoScroll = true };
+            var grid = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+
+            grid.Controls.Add(NamedBtn("net.dns", () => Job(() => CleanEngine.FlushDns())));
+            grid.Controls.Add(NamedBtn("net.renew", () => Job(() => { CleanEngine.FlushDns(); CleanEngine.RunHidden("arp.exe", "-d *"); CleanEngine.RunHidden("ipconfig.exe", "/renew"); })));
+            grid.Controls.Add(NamedBtn("net.winsock", () => Job(() => { if (NeedAdmin("Winsock")) CleanEngine.RunHidden("netsh.exe", "winsock reset"); })));
+            grid.Controls.Add(NamedBtn("net.ncpa", () => CleanEngine.StartHidden("ncpa.cpl")));
+            grid.Controls.Add(NamedBtn("net.wu", () => CleanEngine.StartHidden("ms-settings:windowsupdate")));
+            grid.Controls.Add(NamedBtn("net.ipconfig", () => Job(() => { foreach (var line in CleanEngine.Capture("ipconfig.exe", "/all").Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).Take(40)) Log(line); })));
+            grid.Controls.Add(NamedBtn("net.wifi", () => Job(() => { foreach (var line in CleanEngine.Capture("netsh.exe", "wlan show profiles").Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).Take(30)) Log(line); })));
+            grid.Controls.Add(NamedBtn("net.status", () => { foreach (var line in CleanEngine.IpLines()) Log(line); }));
+
+            page.Controls.Add(grid);
+            return page;
+        }
+
+        private Panel BuildSetPage()
+        {
+            var page = new Panel { Padding = new Padding(16), AutoScroll = true };
+            var grid = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+
+            _themeHead = new Label { AutoSize = true, Font = new Font("Segoe UI Semibold", 10f), Margin = new Padding(0, 0, 0, 8) };
+            grid.Controls.Add(_themeHead);
+
+            var chips = new FlowLayoutPanel { Width = 720, AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 8) };
+            for (int i = 0; i < Palette.All.Length; i++)
+            {
+                var p = Palette.All[i];
+                var key = Palette.Keys[i];
+                var chip = new Button { Text = S.G("theme." + key), Tag = "theme:" + key, Width = 128, Height = 36, FlatStyle = FlatStyle.Flat, BackColor = p.Header, ForeColor = Color.White, Cursor = Cursors.Hand, Margin = new Padding(0, 0, 8, 8) };
+                chip.FlatAppearance.BorderSize = 0;
+                chip.Click += (_, __) => SetTheme(p);
+                chips.Controls.Add(chip);
+            }
+            grid.Controls.Add(chips);
+
+            _langHead = new Label { AutoSize = true, Font = new Font("Segoe UI Semibold", 10f), Margin = new Padding(0, 8, 0, 8) };
+            grid.Controls.Add(_langHead);
+
+            var langs = new FlowLayoutPanel { Width = 720, AutoSize = true, WrapContents = true, Margin = new Padding(0, 0, 0, 12) };
+            for (int i = 0; i < S.Codes.Length; i++)
+            {
+                var code = S.Codes[i];
+                var chip = new Button { Text = S.Names[i], Tag = "lang:" + code, Width = 128, Height = 36, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Margin = new Padding(0, 0, 8, 8) };
+                chip.Click += (_, __) => SetLang(code);
+                langs.Controls.Add(chip);
+            }
+            grid.Controls.Add(langs);
+
+            grid.Controls.Add(NamedBtn("set.top", () => { TopMost = !TopMost; }));
+            grid.Controls.Add(NamedBtn("set.startup", () => CleanEngine.ToggleStartWithWindows()));
+            grid.Controls.Add(NamedBtn("set.savelog", () => { var dest = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "cleanup-log.txt"); File.WriteAllText(dest, _log.Text); Log(dest); }));
+            grid.Controls.Add(NamedBtn("set.hidden", () => CleanEngine.SetExplorerAdvanced("Hidden", 1)));
+            grid.Controls.Add(NamedBtn("set.ext", () => CleanEngine.SetExplorerAdvanced("HideFileExt", 0)));
+            grid.Controls.Add(NamedBtn("set.startapps", () => CleanEngine.StartHidden("ms-settings:startupapps")));
+            grid.Controls.Add(NamedBtn("set.storage", () => CleanEngine.StartHidden("ms-settings:storagesense")));
+            grid.Controls.Add(NamedBtn("set.control", () => CleanEngine.StartHidden("control.exe")));
+            grid.Controls.Add(NamedBtn("set.sysdm", () => CleanEngine.StartHidden("sysdm.cpl")));
+            grid.Controls.Add(NamedBtn("set.hosts", () => CleanEngine.StartHidden("notepad.exe", Path.Combine(Paths.Win, "System32", "drivers", "etc", "hosts"))));
+            grid.Controls.Add(NamedBtn("set.about", () => MessageBox.Show(this, $"{S.G("msg.about")}\n\nVersiyon: {CleanEngine.AppVersion}", $"{S.G("app.title")} {CleanEngine.AppVersion}", MessageBoxButtons.OK, MessageBoxIcon.Information)));
+
+            page.Controls.Add(grid);
+            return page;
+        }
+
+        private Control CatCard(string headKey, params string[] ids)
+        {
+            var card = new Panel { Dock = DockStyle.Fill, Margin = new Padding(7), Padding = new Padding(14, 10, 10, 8) };
+            var head = new Label { Tag = headKey, Font = new Font("Segoe UI Semibold", 8.25f), Dock = DockStyle.Top, Height = 22 };
+            var list = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+
+            foreach (var id in ids)
+            {
+                var admin = AdminItems.Contains(id);
+                var cb = new CheckBox { AutoSize = false, Height = 24, Width = 390, Enabled = !admin || CleanEngine.IsAdmin, FlatStyle = FlatStyle.Flat, Tag = id };
+                cb.CheckedChanged += (_, __) => { if (!_syncing) { _mode = "ozel"; PaintModes(); } };
+                _items[id] = cb;
+                list.Controls.Add(cb);
+            }
+
+            card.Controls.Add(list);
+            card.Controls.Add(head);
+            _cards.Add(card);
+            _cards.Add(list);
+            _cardHeads.Add(head);
+            return card;
+        }
+
+        private Control ToolCard(string headKey, params Button[] buttons)
+        {
+            var card = new Panel { Dock = DockStyle.Fill, Margin = new Padding(7), Padding = new Padding(14, 10, 14, 10) };
+            var head = new Label { Tag = headKey, Font = new Font("Segoe UI Semibold", 8.25f), Dock = DockStyle.Top, Height = 24 };
+            var list = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoScroll = true };
+
+            foreach (var b in buttons)
+            {
+                b.Width = 390;
+                b.Margin = new Padding(0, 0, 0, 8);
+                list.Controls.Add(b);
+            }
+
+            card.Controls.Add(list);
+            card.Controls.Add(head);
+            _cards.Add(card);
+            _cards.Add(list);
+            _cardHeads.Add(head);
+            return card;
+        }
+
+        private Button ModeChip(string id)
+        {
+            var b = new Button { Tag = id, FlatStyle = FlatStyle.Flat, Height = 32, Width = 100, Cursor = Cursors.Hand, Margin = new Padding(0, 4, 8, 0) };
+            b.FlatAppearance.BorderSize = 1;
+            b.Click += (_, __) => ApplyMode(id);
+            _modeBtns.Add(b);
+            return b;
+        }
+
+        private Button MakeBtn(string text, bool primary, int w)
+        {
+            var b = new Button { Text = text, Width = w, Height = 34, FlatStyle = FlatStyle.Flat, Cursor = Cursors.Hand, Margin = new Padding(8, 2, 0, 2), Tag = primary ? "primary" : "ghost" };
+            b.FlatAppearance.BorderSize = 1;
+            return b;
+        }
+
+        private Button Tool(string key, Action work) => Tool(key, () => { work(); return Task.CompletedTask; });
+
+        private Button Tool(string key, Func<Task> work)
+        {
+            var b = MakeBtn("", false, 360);
+            b.Name = key;
+            b.TextAlign = ContentAlignment.MiddleLeft;
+            b.Padding = new Padding(10, 0, 0, 0);
+            b.Click += async (_, __) => await RunJobAsync(S.G(key), work);
+            return b;
+        }
+
+        private Button NamedBtn(string key, Action act)
+        {
+            var b = MakeBtn("", false, 360);
+            b.Name = key;
+            b.TextAlign = ContentAlignment.MiddleLeft;
+            b.Padding = new Padding(12, 0, 0, 0);
+            b.Margin = new Padding(0, 0, 0, 8);
+            b.Click += (_, __) => act();
+            return b;
+        }
+
+        private Button BarBtn(string key, Action act)
+        {
+            var b = MakeBtn("", false, 150);
+            b.Name = key;
+            b.Margin = new Padding(0, 0, 8, 0);
+            b.Click += (_, __) => act();
+            return b;
+        }
+
+        private void Job(Action a) { var _ = RunJobAsync("...", () => { a(); return Task.CompletedTask; }); }
+
+        private void ApplyMode(string mode)
+        {
+            _mode = mode;
+            IEnumerable<string> on;
+            switch (mode)
+            {
+                case "hizli": on = new[] { "temp", "recycle", "dns", "thumbs" }; break;
+                case "tam": on = _items.Keys.Where(k => k != "update" && k != "oldwin"); break;
+                case "ozel": PaintModes(); return;
+                default: on = new[] { "temp", "recycle", "dns", "thumbs", "browser", "inet", "recent", "dumps", "wer", "font", "notify", "photos" }; break;
+            }
+
+            var set = new HashSet<string>(on);
+            _syncing = true;
+            foreach (var kv in _items) if (kv.Value.Enabled) kv.Value.Checked = set.Contains(kv.Key);
+            _syncing = false;
+            PaintModes();
+        }
+
+        private void PaintModes()
+        {
+            foreach (var b in _modeBtns)
+            {
+                bool on = (string)b.Tag == _mode;
+                b.BackColor = on ? _t.Accent2 : _t.Card;
+                b.ForeColor = on ? _t.Accent2Fg : _t.Fg;
+                b.FlatAppearance.BorderColor = on ? _t.Accent : _t.Line;
+            }
+        }
+
+        private void PaintNav()
+        {
+            foreach (var b in _navBtns)
+            {
+                bool on = (string)b.Tag == _page;
+                b.BackColor = on ? _t.SideSel : _t.Sidebar;
+                b.ForeColor = on ? _t.Fg : _t.Muted;
+            }
+        }
+
+        private void ApplyLanguage()
+        {
+            Text = $"{S.G("app.title")} {CleanEngine.AppVersion}";
+            _brand.Text = S.G("app.short");
+            _brandSub.Text = CleanEngine.AppVersion;
+            _logTitle.Text = S.G("log.title");
+            _status.Text = S.G("status.ready");
+            _btnScan.Text = S.G("btn.scan");
+            _btnClean.Text = S.G("btn.clean");
+            _btnStop.Text = S.G("btn.stop");
+            _themeBtn.Text = S.G("btn.nextTheme");
+            _hdrTitle.Text = S.G("page." + _page);
+
+            if (_themeHead != null) _themeHead.Text = S.G("set.themes");
+            if (_langHead != null) _langHead.Text = S.G("set.langs");
+
+            foreach (var b in _navBtns) b.Text = "   " + S.G("nav." + b.Tag);
+            foreach (var b in _modeBtns) b.Text = S.G("mode." + b.Tag);
+            foreach (var h in _cardHeads) if (h.Tag is string k) h.Text = S.G(k).ToUpperInvariant();
+
+            foreach (var kv in _items)
+            {
+                var t = S.G("item." + kv.Key);
+                if (AdminItems.Contains(kv.Key) && !CleanEngine.IsAdmin) t += "  ·  " + S.G("need.admin");
+                kv.Value.Text = t;
+            }
+
+            RelabelNamed(this);
+            RelabelThemes(this);
+            PaintModes();
+            PaintNav();
+            UpdateStats();
+
+            if (_page == "sys") RefreshSysPage();
+        }
+
+        private void RelabelNamed(Control root)
+        {
+            foreach (Control c in root.Controls)
+            {
+                if (c is Button && !string.IsNullOrEmpty(c.Name) && (c.Name.StartsWith("tool.") || c.Name.StartsWith("set.") || c.Name.StartsWith("net.") || c.Name.StartsWith("sys.")))
+                    c.Text = S.G(c.Name);
+                RelabelNamed(c);
+            }
+        }
+
+        private void RelabelThemes(Control root)
+        {
+            foreach (Control c in root.Controls)
+            {
+                if (c is Button && c.Tag is string t && t.StartsWith("theme:")) c.Text = S.G(t.Replace("theme:", "theme."));
+                RelabelThemes(c);
+            }
+        }
+
+        private void ApplyTheme()
+        {
+            BackColor = _t.Bg;
+            ForeColor = _t.Fg;
+            _sidebar.BackColor = _t.Sidebar;
+            _header.BackColor = _t.Header;
+            _logDock.BackColor = _t.Bg;
+            _actionBar.BackColor = _t.Bg;
+            _host.BackColor = _t.Bg;
+
+            _brand.BackColor = _t.Sidebar;
+            _brand.ForeColor = _t.Fg;
+            _brandSub.BackColor = _t.Sidebar;
+            _brandSub.ForeColor = _t.Muted;
+
+            _stats.ForeColor = Color.FromArgb(204, 251, 241);
+            _stats.BackColor = _t.Header;
+            _hdrTitle.ForeColor = Color.White;
+            _hdrTitle.BackColor = _t.Header;
+
+            _status.ForeColor = _t.Muted;
+            _status.BackColor = _t.Bg;
+            _logTitle.ForeColor = _t.Muted;
+            _logTitle.BackColor = _t.Bg;
+
+            _log.BackColor = _t.LogBg;
+            _log.ForeColor = _t.Dark ? Color.FromArgb(203, 213, 225) : Color.FromArgb(51, 65, 85);
+
+            if (_sysBody != null) { _sysBody.BackColor = _t.Card; _sysBody.ForeColor = _t.Fg; }
+            if (_themeHead != null) { _themeHead.ForeColor = _t.Fg; _themeHead.BackColor = _t.Bg; }
+            if (_langHead != null) { _langHead.ForeColor = _t.Fg; _langHead.BackColor = _t.Bg; }
+
+            foreach (var p in _pages.Values) p.BackColor = _t.Bg;
+            foreach (var c in _cards) { c.BackColor = _t.Card; c.ForeColor = _t.Fg; }
+            foreach (var h in _cardHeads) { h.BackColor = _t.Card; h.ForeColor = _t.Accent; }
+            foreach (var kv in _items) { kv.Value.BackColor = _t.Card; kv.Value.ForeColor = kv.Value.Enabled ? _t.Fg : _t.Muted; }
+
+            PaintModes();
+            PaintNav();
+            ColorizeButtons(this);
+
+            if (_t.Dark) WinApi.TryDarkTitle(Handle);
+        }
+
+        private void ColorizeButtons(Control root)
+        {
+            foreach (Control c in root.Controls)
+            {
+                var b = c as Button;
+                if (b != null && b.Tag is string tag)
+                {
+                    if (tag.StartsWith("lang:"))
+                    {
+                        b.BackColor = _t.Btn;
+                        b.ForeColor = _t.Fg;
+                        b.FlatAppearance.BorderColor = _t.Line;
+                    }
+                    else if (tag == "primary" || tag == "ghost")
+                    {
+                        bool primary = tag == "primary";
+                        b.BackColor = primary ? _t.Accent2 : _t.Btn;
+                        b.ForeColor = primary ? _t.Accent2Fg : _t.Dark ? Color.White : _t.Fg;
+                        if (!primary && !_t.Dark) b.ForeColor = _t.Fg;
+                        b.FlatAppearance.BorderColor = primary ? _t.Accent2 : _t.Line;
+                    }
+                }
+                ColorizeButtons(c);
+            }
+        }
+
+        private IEnumerable<string> SelectedIds() => _items.Where(kv => kv.Value.Checked && kv.Value.Enabled).Select(kv => kv.Key);
+
+        private async Task RunJobAsync(string title, Func<Task> work)
+        {
+            if (_busy) { Log(S.G("log.busy")); return; }
+
+            _busy = true;
+            _cts = new CancellationTokenSource();
+            _btnStop.Enabled = true;
+            _btnClean.Enabled = _btnScan.Enabled = false;
+            _status.Text = title;
+
+            try
+            {
+                await work().ConfigureAwait(true);
+            }
+            catch (OperationCanceledException) { Log(S.G("log.cancel")); }
+            catch (Exception ex) { Log(ex.Message); }
+            finally
+            {
+                _busy = false;
+                _btnStop.Enabled = false;
+                _btnClean.Enabled = _btnScan.Enabled = true;
+                _status.Text = S.G("status.ready");
+                _cts.Dispose();
+                _cts = null;
+                UpdateStats();
+            }
+        }
+
+        private async Task ScanSelectedAsync()
+        {
+            var ids = SelectedIds().ToList();
+            if (ids.Count == 0) { Log(S.G("log.none")); return; }
+
+            Log(S.G("log.scan"));
+            long total = 0;
+            var ct = _cts.Token;
+
+            await Task.Run(() =>
+            {
+                foreach (var id in ids)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    long sz = SizeOf(id);
+                    total += sz;
+                    var line = $"{LabelOf(id)}: {(id == "recycle" || id == "dns" ? "—" : CleanEngine.FormatSize(sz))}";
+                    BeginInvoke((Action)(() => Log(line)));
+                }
+            }, ct).ConfigureAwait(true);
+
+            Log(string.Format(S.G("log.total"), CleanEngine.FormatSize(total)));
+        }
+
+        private async Task CleanSelectedAsync()
+        {
+            var ids = SelectedIds().ToList();
+            if (ids.Count == 0) { Log(S.G("log.none")); return; }
+
+            Log(S.G("log.clean"));
+            long freed = 0;
+            var ct = _cts.Token;
+
+            await Task.Run(() =>
+            {
+                foreach (var id in ids)
+                {
+                    ct.ThrowIfCancellationRequested();
+                    freed += CleanId(id, ct);
+                    BeginInvoke((Action)(() => Log($"{LabelOf(id)} {S.G("log.doneitem")}")));
+                }
+            }, ct).ConfigureAwait(true);
+
+            Log(string.Format(S.G("log.gain"), CleanEngine.FormatSize(freed)));
+            MessageBox.Show(this, string.Format(S.G("msg.done"), CleanEngine.FormatSize(freed)), $"{S.G("app.title")} {CleanEngine.AppVersion}", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+
+        private long SizeOf(string id)
+        {
+            switch (id)
+            {
+                case "temp": return CleanEngine.QuickSizeMany(CleanEngine.UserTemps());
+                case "wintemp": return CleanEngine.QuickSize(Paths.TempWin);
+                case "prefetch": return CleanEngine.QuickSize(Paths.Prefetch);
+                case "thumbs": return CleanEngine.QuickSize(Paths.Thumbs);
+                case "recent": return CleanEngine.QuickSize(Paths.Recent);
+                case "dumps": return CleanEngine.QuickSize(Paths.Dumps);
+                case "browser": return CleanEngine.QuickSizeMany(CleanEngine.BrowserCaches());
+                case "inet": return CleanEngine.QuickSize(Paths.INet);
+                case "wer": return CleanEngine.QuickSizeMany(CleanEngine.WerPaths());
+                case "font": return CleanEngine.QuickSize(Paths.Font);
+                case "dx": return CleanEngine.QuickSize(Paths.D3D);
+                case "gpu": return CleanEngine.QuickSizeMany(CleanEngine.GpuCaches());
+                case "discord": return CleanEngine.QuickSizeMany(CleanEngine.DiscordCaches());
+                case "teams": return CleanEngine.QuickSizeMany(CleanEngine.TeamsCaches());
+                case "steam": return CleanEngine.QuickSizeMany(CleanEngine.SteamCaches());
+                case "office": return CleanEngine.QuickSizeMany(CleanEngine.OfficeCaches());
+                case "spotify": return CleanEngine.QuickSizeMany(CleanEngine.SpotifyCaches());
+                case "roblox": return CleanEngine.QuickSizeMany(CleanEngine.RobloxCaches());
+                case "vscode": return CleanEngine.QuickSizeMany(CleanEngine.VsCodeCaches());
+                case "webview": return CleanEngine.QuickSizeMany(CleanEngine.WebViewCaches());
+                case "java": return CleanEngine.QuickSizeMany(CleanEngine.JavaCaches());
+                case "adobe": return CleanEngine.QuickSizeMany(CleanEngine.AdobeCaches());
+                case "epic": return CleanEngine.QuickSizeMany(CleanEngine.EpicCaches());
+                case "logs": return CleanEngine.QuickSizeMany(CleanEngine.WinLogs());
+                case "notify": return CleanEngine.QuickSizeMany(CleanEngine.NotifyPaths());
+                case "zoom": return CleanEngine.QuickSizeMany(CleanEngine.ZoomCaches());
+                case "telegram": return CleanEngine.QuickSizeMany(CleanEngine.TelegramCaches());
+                case "xbox": return CleanEngine.QuickSizeMany(CleanEngine.XboxCaches());
+                case "photos": return CleanEngine.QuickSizeMany(CleanEngine.PhotosCaches());
+                case "npm": return CleanEngine.QuickSizeMany(CleanEngine.DevCaches());
+                case "onedrive": return CleanEngine.QuickSizeMany(CleanEngine.OneDriveLogs());
+                case "do": return CleanEngine.QuickSize(Paths.DO);
+                case "update": return CleanEngine.QuickSize(Paths.Update);
+                case "minidump": return CleanEngine.QuickSize(Paths.Mini);
+                case "oldwin": return CleanEngine.QuickSize(Paths.OldWin);
+                default: return 0;
+            }
+        }
+
+        private long CleanId(string id, CancellationToken ct)
+        {
+            CleanResult R(IEnumerable<string> p) => CleanEngine.CleanMany(p, ct);
+            CleanResult D(string p) => CleanEngine.CleanTree(p, ct);
+
+            switch (id)
+            {
+                case "temp": return R(CleanEngine.UserTemps()).Freed;
+                case "wintemp": return NeedAdmin("Windows TEMP") ? D(Paths.TempWin).Freed : 0;
+                case "recycle": CleanEngine.EmptyRecycle(); return 0;
+                case "dns": CleanEngine.FlushDns(); return 0;
+                case "thumbs": return CleanEngine.CleanThumbs();
+                case "prefetch": return NeedAdmin("Prefetch") ? D(Paths.Prefetch).Freed : 0;
+                case "recent": return D(Paths.Recent).Freed;
+                case "browser": return R(CleanEngine.BrowserCaches()).Freed;
+                case "dumps": return D(Paths.Dumps).Freed;
+                case "inet": return D(Paths.INet).Freed;
+                case "wer": return R(CleanEngine.WerPaths()).Freed;
+                case "font": return D(Paths.Font).Freed;
+                case "dx": return D(Paths.D3D).Freed;
+                case "gpu": return R(CleanEngine.GpuCaches()).Freed;
+                case "discord": return R(CleanEngine.DiscordCaches()).Freed;
+                case "steam": return R(CleanEngine.SteamCaches()).Freed;
+                case "teams": return R(CleanEngine.TeamsCaches()).Freed;
+                case "office": return R(CleanEngine.OfficeCaches()).Freed;
+                case "spotify": return R(CleanEngine.SpotifyCaches()).Freed;
+                case "roblox": return R(CleanEngine.RobloxCaches()).Freed;
+                case "vscode": return R(CleanEngine.VsCodeCaches()).Freed;
+                case "webview": return R(CleanEngine.WebViewCaches()).Freed;
+                case "java": return R(CleanEngine.JavaCaches()).Freed;
+                case "adobe": return R(CleanEngine.AdobeCaches()).Freed;
+                case "epic": return R(CleanEngine.EpicCaches()).Freed;
+                case "logs": return NeedAdmin("logs") ? R(CleanEngine.WinLogs()).Freed : 0;
+                case "notify": return R(CleanEngine.NotifyPaths()).Freed;
+                case "zoom": return R(CleanEngine.ZoomCaches()).Freed;
+                case "telegram": return R(CleanEngine.TelegramCaches()).Freed;
+                case "xbox": return R(CleanEngine.XboxCaches()).Freed;
+                case "photos": return R(CleanEngine.PhotosCaches()).Freed;
+                case "npm": return R(CleanEngine.DevCaches()).Freed;
+                case "onedrive": return R(CleanEngine.OneDriveLogs()).Freed;
+                case "do": return NeedAdmin("DO") ? D(Paths.DO).Freed : 0;
+                case "update": return NeedAdmin("Update") ? D(Paths.Update).Freed : 0;
+                case "minidump": return NeedAdmin("Minidump") ? D(Paths.Mini).Freed : 0;
+                case "oldwin": return Directory.Exists(Paths.OldWin) && NeedAdmin("Windows.old") ? D(Paths.OldWin).Freed : 0;
+                default: return 0;
+            }
+        }
+
+        private string LabelOf(string id) => S.G("item." + id);
+
+        private bool NeedAdmin(string name)
+        {
+            if (CleanEngine.IsAdmin) return true;
+            Log($"{name} {S.G("log.needadm")}");
+            return false;
+        }
+
+        private void RefreshSysPage()
+        {
+            var lines = new List<string>
+            {
+                Environment.MachineName,
+                Environment.UserName,
+                Environment.OSVersion.ToString(),
+                $"CPU: {Environment.ProcessorCount}",
+                CleanEngine.RamLine(),
+                CleanEngine.DiskLine()
+            };
+
+            lines.AddRange(CleanEngine.IpLines());
+            lines.AddRange(CleanEngine.TopProcesses());
+
+            if (_sysBody != null) _sysBody.Text = string.Join(Environment.NewLine, lines);
+        }
+
+        private void UpdateStats()
+        {
+            try
+            {
+                _stats.Text = $"{CleanEngine.RamLine()}     •     {CleanEngine.DiskLine()}";
+            }
+            catch { _stats.Text = ""; }
+        }
+
+        private void Log(string line)
+        {
+            if (_log == null) return;
+            if (_log.InvokeRequired)
+            {
+                BeginInvoke((Action)(() => Log(line)));
+                return;
+            }
+            _log.AppendText($"[{DateTime.Now:HH:mm:ss}] {line}{Environment.NewLine}");
+        }
+
+        private void RestartAdmin()
+        {
+            if (CleanEngine.IsAdmin) return;
+            try
+            {
+                WinApi.ShellExecute(IntPtr.Zero, "runas", Application.ExecutablePath, null, null, 1);
+                Close();
+            }
+            catch { }
+        }
+    }
+}

@@ -1,0 +1,245 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\updatechecker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:updatechecker.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\mainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:mainform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\cleanengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:cleanengine.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\rambooster.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:rambooster.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\lang.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:lang.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\wincleaner.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:wincleaner.csproj||{04B8AB82-A572-4FEF-95CE-5222444B6B64}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\winapi.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:winapi.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\diskanalyzer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:diskanalyzer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\diskanalyzerform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:diskanalyzerform.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\readme.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:readme.md||{EFC0BB08-EA7D-40C6-A696-C870411A895B}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\wincleaner.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:wincleaner.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|c:\\users\\egeha\\source\\repos\\nimbus-cleaner\\nimbuscleaner.iss||{8B382828-6202-11D1-8870-0000F87579D2}",
+      "RelativeMoniker": "D:0:0:{4B29DDD2-2D7F-6598-7DFF-5A13FC8F8ADD}|WinCleaner.csproj|solutionrelative:nimbuscleaner.iss||{8B382828-6202-11D1-8870-0000F87579D2}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{d78612c7-9962-4b83-95d9-268046dad23a}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c64b9c2-e352-428e-a56d-0ace190b99a6}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{3ae79031-e1bc-11d0-8f78-00a0c9110057}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{c6f34f0d-7ae5-4f3a-be61-fe0c21ae9eb8}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "RamBooster.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\RamBooster.cs",
+              "RelativeDocumentMoniker": "RamBooster.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\RamBooster.cs",
+              "RelativeToolTip": "RamBooster.cs",
+              "ViewState": "AgIAAC8AAAAAAAAAAAAQwI0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-16T18:12:16.758Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "UpdateChecker.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\UpdateChecker.cs",
+              "RelativeDocumentMoniker": "UpdateChecker.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\UpdateChecker.cs",
+              "RelativeToolTip": "UpdateChecker.cs",
+              "ViewState": "AgIAAFcAAAAAAAAAAAAwwO0AAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-16T17:39:48.93Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "NimbusCleaner.iss",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\NimbusCleaner.iss",
+              "RelativeDocumentMoniker": "NimbusCleaner.iss",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\NimbusCleaner.iss",
+              "RelativeToolTip": "NimbusCleaner.iss",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAKAAAAAAAAAA==",
+              "Icon": "00000000-0000-0000-0000-000000000000.000000|iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAAJcEhZcwAADsMAAA7DAcdvqGQAAALiSURBVDhPhZNtaJVlGMd/9/2c85xztnbcy1G33EtORM9aL04wbbTGIg0jJNAsilH5EroPK/oSCEEvow/Wp4hQckiBRq5IMFj5QbJUKALHRGVWnhgOoTPb1tkO53me\u002B7r6cJxsFPSDG264r\u002BvHdd/cf8MCDh79RkUUVUUXHtzGGkNQmsNa\u002B8yBV7afQHVx2XtHTur/MXD4S33n4xM6cGjoWQC7UGBEAJgqFBkdn2YiX0DFIaJEopRCRxCEbOhoR1SPDxwa2hFbKPhrZoa3zk4yMum4\u002Bbdj5HqR\u002BsINPngqw9bOtYgCqpz/eYSE7\u002BPEfeHNN9d0v/x0wxO9O3uyGR5bmaQ546NVcX6a9Tk\u002BdJZMlKfj3lVsXNfGpo4sXevb\u002BPGXy\u002BUr2OVZb/mWfZ93ZhvorI/TURenNR2jqcpjybIKaG3h1Y9OMvbrH4ROCAJHKXK4KCoLpLa9L1F/j99QAYXAMV5wTBaF6UCZK0XcXWtpWrOC9wePEYSOUJQwUkQc5Tfw7upamgq5ORsxNhWR8Ay5GcfFfMj2ZsOne3qAHo4Nn6EUhFgvRswqTqQsqKsLa3atS9J3bppVNQl8a7gx68hN/EkxyHG\u002BVXh4dSNWIXSKUUfcs6gKMZNKx9/tf6H7ypXfuXVtjlvVdWAMFKa4P13gyPMbkLlpfhi9Sn6mQCSKUSVygjqHVWXbji2P2r2PrObJ9AQb5Sr7VuS50NvCyOuPk/ttjIee62fwq2GW1i7DqSF0ghNFVInhosuj13J0P7CWU2/svPMnLl0fZ3Pfm5w\u002BfQ6CIpva7yO7po0gchgoC1x5T2XDyoEXd\u002B/ub2luqUzXZvj61HcMf/s9qepqutY/yP69L9HU2IgTQUQwxrCk0ufw4GdlwTz7DxzU3l170NuF1lqs9ZD5xjvZKQs\u002BGTy6OAvJZIp00ied9KmuSJJO\u002BlT6HlWJGOmUT9X8qvDBWEAXT/Da2x\u002BqiPwrpf\u002BFMQZrLf8AHQ1sZT8io14AAAAASUVORK5CYII=",
+              "WhenOpened": "2026-10-11T14:37:14.465Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "WinCleaner.csproj",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\WinCleaner.csproj",
+              "RelativeDocumentMoniker": "WinCleaner.csproj",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\WinCleaner.csproj",
+              "RelativeToolTip": "WinCleaner.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-10-11T14:36:01.903Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "README.md",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\README.md",
+              "RelativeDocumentMoniker": "README.md",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\README.md",
+              "RelativeToolTip": "README.md",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.001818|",
+              "WhenOpened": "2026-10-11T14:31:54.53Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "DiskAnalyzerForm.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\DiskAnalyzerForm.cs",
+              "RelativeDocumentMoniker": "DiskAnalyzerForm.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\DiskAnalyzerForm.cs",
+              "RelativeToolTip": "DiskAnalyzerForm.cs",
+              "ViewState": "AgIAAB0AAAAAAAAAAAAAAAMBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-11T14:31:09.008Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "DiskAnalyzer.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\DiskAnalyzer.cs",
+              "RelativeDocumentMoniker": "DiskAnalyzer.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\DiskAnalyzer.cs",
+              "RelativeToolTip": "DiskAnalyzer.cs",
+              "ViewState": "AgIAAEUAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-10-11T14:29:57.21Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "WinApi.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\WinApi.cs",
+              "RelativeDocumentMoniker": "WinApi.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\WinApi.cs",
+              "RelativeToolTip": "WinApi.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T13:28:13.778Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "WinCleaner",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\WinCleaner.csproj",
+              "RelativeDocumentMoniker": "WinCleaner.csproj",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\WinCleaner.csproj",
+              "RelativeToolTip": "WinCleaner.csproj",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2026-09-14T13:21:08.955Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "MainForm.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\MainForm.cs",
+              "RelativeDocumentMoniker": "MainForm.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\MainForm.cs",
+              "RelativeToolTip": "MainForm.cs",
+              "ViewState": "AgIAADUCAAAAAAAAAAAwwFcCAACkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T13:03:12.424Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T13:03:09.07Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CleanEngine.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\CleanEngine.cs",
+              "RelativeDocumentMoniker": "CleanEngine.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\CleanEngine.cs",
+              "RelativeToolTip": "CleanEngine.cs",
+              "ViewState": "AgIAAD0AAAAAAAAAAAAtwA8AAAAFAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T13:02:15.209Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "Lang.cs",
+              "DocumentMoniker": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\Lang.cs",
+              "RelativeDocumentMoniker": "Lang.cs",
+              "ToolTip": "C:\\Users\\egeha\\source\\repos\\Nimbus-Cleaner\\Lang.cs",
+              "RelativeToolTip": "Lang.cs",
+              "ViewState": "AgIAAGkAAAAAAAAAAAAIwBgHAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-09-14T13:02:14.258Z"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
